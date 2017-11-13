@@ -15,6 +15,7 @@
  */
 package org.gradle.api.internal.artifacts.repositories.resolver;
 
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.internal.component.external.model.ModuleComponentArtifactIdentifier;
 import org.gradle.internal.component.external.model.ModuleComponentArtifactMetadata;
 import org.gradle.internal.component.external.model.UrlBackedArtifactMetadata;
@@ -73,6 +74,9 @@ class DefaultExternalResourceArtifactResolver implements ExternalResourceArtifac
 
     private boolean staticResourceExists(List<ResourcePattern> patternList, ModuleComponentArtifactMetadata artifact, ResourceAwareResolveResult result) {
         for (ResourcePattern resourcePattern : patternList) {
+            if (isIncomplete(resourcePattern, artifact.getId().getComponentIdentifier())) {
+                continue;
+            }
             ExternalResourceName location = resourcePattern.getLocation(artifact);
             result.attempted(location);
             LOGGER.debug("Loading {}", location);
@@ -98,6 +102,9 @@ class DefaultExternalResourceArtifactResolver implements ExternalResourceArtifac
 
     private LocallyAvailableExternalResource downloadByUrl(List<ResourcePattern> patternList, final UrlBackedArtifactMetadata artifact, ResourceAwareResolveResult result) {
         for (ResourcePattern resourcePattern : patternList) {
+            if (isIncomplete(resourcePattern, artifact.getId().getComponentIdentifier())) {
+                continue;
+            }
             ExternalResourceName moduleDir = resourcePattern.toModuleVersionPath(artifact.getComponentId());
             ExternalResourceName location = moduleDir.resolve(artifact.getRelativeUrl());
             result.attempted(location);
@@ -121,6 +128,9 @@ class DefaultExternalResourceArtifactResolver implements ExternalResourceArtifac
 
     private LocallyAvailableExternalResource downloadByCoords(List<ResourcePattern> patternList, final ModuleComponentArtifactMetadata artifact, ResourceAwareResolveResult result) {
         for (ResourcePattern resourcePattern : patternList) {
+            if (isIncomplete(resourcePattern, artifact.getId().getComponentIdentifier())) {
+                continue;
+            }
             ExternalResourceName location = resourcePattern.getLocation(artifact);
             result.attempted(location);
             LOGGER.debug("Loading {}", location);
@@ -139,5 +149,18 @@ class DefaultExternalResourceArtifactResolver implements ExternalResourceArtifac
             }
         }
         return null;
+    }
+
+    private boolean isIncomplete(ResourcePattern resourcePattern, ModuleComponentIdentifier moduleComponentIdentifier) {
+        String pattern = resourcePattern.getPattern();
+        int optionalIndex = pattern.indexOf('(');
+        int groupIndex = pattern.indexOf("[organisation]");
+        int versionIndex = pattern.indexOf("[revision]");
+        boolean requiresGroup = groupIndex >= 0 && (optionalIndex < 0 || optionalIndex > groupIndex);
+        boolean requiresVersion = versionIndex >= 0 && (optionalIndex < 0 || optionalIndex > versionIndex);
+
+        return moduleComponentIdentifier.getModule().isEmpty()
+            || (requiresVersion && moduleComponentIdentifier.getVersion().isEmpty())
+            || (requiresGroup && moduleComponentIdentifier.getGroup().isEmpty());
     }
 }

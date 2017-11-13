@@ -122,6 +122,7 @@ public class MavenResolver extends ExternalResourceResolver<MavenModuleResolveMe
     }
 
     protected void doResolveComponentMetaData(ModuleComponentIdentifier moduleComponentIdentifier, ComponentOverrideMetadata prescribedMetaData, BuildableModuleComponentMetaDataResolveResult result) {
+        //do an early check to avoid attempts to download maven-metadata.xml fo incomplete identifiers
         if (isIncomplete(moduleComponentIdentifier)) {
             result.missing();
             return;

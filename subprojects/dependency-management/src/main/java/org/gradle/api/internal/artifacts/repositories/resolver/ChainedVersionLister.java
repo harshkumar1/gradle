@@ -41,6 +41,9 @@ public class ChainedVersionLister implements VersionLister {
         }
         return new VersionPatternVisitor() {
             public void visit(ResourcePattern pattern, IvyArtifactName artifact) throws ResourceException {
+                if (isIncomplete(pattern, module)) {
+                    return;
+                }
                 MissingResourceException failure = null;
                 for (VersionPatternVisitor list : visitors) {
                     try {
@@ -58,5 +61,15 @@ public class ChainedVersionLister implements VersionLister {
                 throw failure;
             }
         };
+    }
+
+    private boolean isIncomplete(ResourcePattern resourcePattern, ModuleIdentifier moduleIdentifier) {
+        String pattern = resourcePattern.getPattern();
+        int optionalIndex = pattern.indexOf('(');
+        int groupIndex = pattern.indexOf("[organisation]");
+        boolean requiresGroup = groupIndex >= 0 && (optionalIndex < 0 || optionalIndex > groupIndex);
+
+        return moduleIdentifier.getName().isEmpty()
+            || (requiresGroup && moduleIdentifier.getGroup().isEmpty());
     }
 }
