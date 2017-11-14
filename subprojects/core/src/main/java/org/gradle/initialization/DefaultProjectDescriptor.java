@@ -138,7 +138,7 @@ public class DefaultProjectDescriptor implements ProjectDescriptor, ProjectIdent
     }
 
     public File getBuildFile() {
-        return FileUtils.canonicalize(buildFile());
+        return fileResolver.resolve(buildFile());
     }
 
     private File buildFile() {

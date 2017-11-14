@@ -53,7 +53,7 @@ public class UriTextResource implements TextResource {
 
     UriTextResource(String description, URI sourceUri) {
         this.description = description;
-        this.sourceFile = sourceUri.getScheme().equals("file") ? FileUtils.canonicalize(new File(sourceUri.getPath())) : null;
+        this.sourceFile = sourceUri.getScheme().equals("file") ? FileUtils.normalize(new File(sourceUri.getPath())) : null;
         this.sourceUri = sourceUri;
     }
 
